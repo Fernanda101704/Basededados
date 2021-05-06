@@ -1,0 +1,1016 @@
+{
+  "nbformat": 4,
+  "nbformat_minor": 0,
+  "metadata": {
+    "colab": {
+      "name": "Projeto 1 RN.ipynb",
+      "provenance": [],
+      "collapsed_sections": [],
+      "authorship_tag": "ABX9TyP922hi1BRSpnblo91y59kr",
+      "include_colab_link": true
+    },
+    "kernelspec": {
+      "name": "python3",
+      "display_name": "Python 3"
+    },
+    "language_info": {
+      "name": "python"
+    }
+  },
+  "cells": [
+    {
+      "cell_type": "markdown",
+      "metadata": {
+        "id": "view-in-github",
+        "colab_type": "text"
+      },
+      "source": [
+        "<a href=\"https://colab.research.google.com/github/Fernanda101704/Redes_Neurais_2021/blob/main/Projeto_1_RN.modificadocerto.pynb\" target=\"_parent\"><img src=\"https://colab.research.google.com/assets/colab-badge.svg\" alt=\"Open In Colab\"/></a>"
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "1Dnn5My4tqNF"
+      },
+      "source": [
+        "# Projeto 1: Disciplina de Redes Neurais\n",
+        "# Tema: Modelagem de Rede Neural Artificial para Adsorção de Corantes de solução aquosa usando carbono de casca de arroz\n",
+        "# Aluna: Fernanda Silva Pimenta\n",
+        "# Data: 12/05/2021\n",
+        "#\n",
+        "# Inicialmente é necessário definir as bibliotecas que serão utilizadas para a execução do código corretamente:\n",
+        "import numpy as np\n",
+        "# numpy é a biblioteca numérica do Phyton\n",
+        "import pandas as pd\n",
+        "# pandas é a biblioteca responsável pela manipulação de arquivos\n",
+        "import matplotlib.pyplot as plt\n",
+        "# matplotlib.pyplot é a biblioteca usada para fazer gráficos no Phyton\n",
+        "from sklearn.neural_network import MLPRegressor\n",
+        "# sklearn.neural_network é a biblioteca usada para fazer classificação e regressão, neste caso, ela faz a regressão (MLPRegressor)\n",
+        "from sklearn.metrics import mean_squared_error\n",
+        "# Essa biblioteca é usada para fazer a soma dos quadrados dos desvios\n",
+        "from sklearn.metrics import r2_score \n",
+        "# Essa biblioteca foi criada para avaliar se o ajuste está bom através do coeficiente de determinação\n",
+        "from google.colab import files\n",
+        "# Essa biblioteca é usada para carregar arquivos no Phyton\n"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "5qZF3TZHz3G0"
+      },
+      "source": [
+        "%matplotlib inline\n",
+        "# Esse comando indica a construção de gráficos no browser, entretanto, mesmo sem essa linha o Phyton geraria o gráfico normalmente"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "zCIcjkxQnmHx",
+        "outputId": "cb39775e-412a-4504-d74c-4ea146a2c89b"
+      },
+      "source": [
+        "!git clone https://github.com/Fernanda101704/Redes_Neurais_2021\n",
+        "%cd Redes_Neurais_2021\n",
+        "# Esse comando é usado para criar uma cópia de um repositório ou parte específica dentro de um repositório"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "Cloning into 'Redes_Neurais_2021'...\n",
+            "remote: Enumerating objects: 31, done.\u001b[K\n",
+            "remote: Counting objects: 100% (31/31), done.\u001b[K\n",
+            "remote: Compressing objects: 100% (31/31), done.\u001b[K\n",
+            "remote: Total 31 (delta 13), reused 0 (delta 0), pack-reused 0\u001b[K\n",
+            "Unpacking objects: 100% (31/31), done.\n",
+            "/content/Redes_Neurais_2021\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "z6G2Ckzenw7I",
+        "outputId": "ce0d10e7-aba2-42ee-ea02-ef08139c1b8a"
+      },
+      "source": [
+        "# leitura dos dados, nesse caso foi usado o delimiter para arrumar a planilha para as colunas não ficarem separadas pelo ';'\n",
+        "df=pd.read_csv(\"Dados totais.csv\",delimiter=';')\n",
+        "print(df.head(5))"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "   Abs    IC   AA      AD    PRA     MDL    Tipo\n",
+            "0   30  1000  8.0  11.562  92.50  90.389   teste\n",
+            "1   60   100  8.0   1.224  97.92  97.909   teste\n",
+            "2   80   500  2.5  19.875  99.38  99.929   teste\n",
+            "3   90   500  1.5  33.021  99.06  99.892   teste\n",
+            "4   30  1000  2.0  39.000  78.00  77.534  treino\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "-248Ngqg2HRg",
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 204
+        },
+        "outputId": "31738beb-4211-4171-a500-1aa505e37e40"
+      },
+      "source": [
+        "# separa as colunas de interesse, imprimindo todas as linhas e as colunas indicadas no Index (lista)\n",
+        "Index=[0,1,2,4,5]\n",
+        "DS=[]\n",
+        "DS=df.iloc[:,Index].copy()\n",
+        "DS.head(5)"
+      ],
+      "execution_count": 72,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Abs</th>\n",
+              "      <th>IC</th>\n",
+              "      <th>AA</th>\n",
+              "      <th>PRA</th>\n",
+              "      <th>MDL</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>30</td>\n",
+              "      <td>1000</td>\n",
+              "      <td>8.0</td>\n",
+              "      <td>92.50</td>\n",
+              "      <td>90.389</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>60</td>\n",
+              "      <td>100</td>\n",
+              "      <td>8.0</td>\n",
+              "      <td>97.92</td>\n",
+              "      <td>97.909</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>80</td>\n",
+              "      <td>500</td>\n",
+              "      <td>2.5</td>\n",
+              "      <td>99.38</td>\n",
+              "      <td>99.929</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>90</td>\n",
+              "      <td>500</td>\n",
+              "      <td>1.5</td>\n",
+              "      <td>99.06</td>\n",
+              "      <td>99.892</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>30</td>\n",
+              "      <td>1000</td>\n",
+              "      <td>2.0</td>\n",
+              "      <td>78.00</td>\n",
+              "      <td>77.534</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "   Abs    IC   AA    PRA     MDL\n",
+              "0   30  1000  8.0  92.50  90.389\n",
+              "1   60   100  8.0  97.92  97.909\n",
+              "2   80   500  2.5  99.38  99.929\n",
+              "3   90   500  1.5  99.06  99.892\n",
+              "4   30  1000  2.0  78.00  77.534"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 72
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "oFcR0He844j-"
+      },
+      "source": [
+        "# funcao normatiza dados\n",
+        "def Normatiza(x):\n",
+        "    strings=list(x)\n",
+        "    for i in strings:\n",
+        "        max_x=x[i].max()\n",
+        "        min_x=x[i].min()\n",
+        "        a=(max_x+min_x)/2\n",
+        "        b=(max_x-min_x)/2\n",
+        "        x[i]=(x[i]-a)/b\n",
+        "        #x[i]=0.8*(x[i]-min_x)/(max_x-min_x)+0.1\n",
+        "    return x"
+      ],
+      "execution_count": 73,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "RjkSmY5V5XKV"
+      },
+      "source": [
+        "# funcao retorna os dados a forma original\n",
+        "def Original(x,x_old):\n",
+        "    strings=list(x)\n",
+        "    for i in strings:\n",
+        "        max_x=x_old[i].max()\n",
+        "        min_x=x_old[i].min()\n",
+        "        a=(max_x+min_x)/2\n",
+        "        b=(max_x-min_x)/2\n",
+        "        x[i]=x[i]*b+a\n",
+        "    return x"
+      ],
+      "execution_count": 74,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "xvkTbwUx5bu6"
+      },
+      "source": [
+        "# separa os dados em normatizados e originais\n",
+        "DAT_OLD=[]\n",
+        "DAT_OLD=DS.copy()\n",
+        "DAT=Normatiza(DS)"
+      ],
+      "execution_count": 75,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 142
+        },
+        "id": "N89TfNG_572q",
+        "outputId": "c327d222-5ca0-49af-9149-4771dc5e843b"
+      },
+      "source": [
+        "DS.head(3)"
+      ],
+      "execution_count": 76,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Abs</th>\n",
+              "      <th>IC</th>\n",
+              "      <th>AA</th>\n",
+              "      <th>PRA</th>\n",
+              "      <th>MDL</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>-1.000000</td>\n",
+              "      <td>1.000000</td>\n",
+              "      <td>0.578947</td>\n",
+              "      <td>0.347826</td>\n",
+              "      <td>0.167798</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>-1.000000</td>\n",
+              "      <td>0.578947</td>\n",
+              "      <td>0.819130</td>\n",
+              "      <td>0.822280</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>0.666667</td>\n",
+              "      <td>-0.111111</td>\n",
+              "      <td>-0.578947</td>\n",
+              "      <td>0.946087</td>\n",
+              "      <td>0.998085</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "        Abs        IC        AA       PRA       MDL\n",
+              "0 -1.000000  1.000000  0.578947  0.347826  0.167798\n",
+              "1  0.000000 -1.000000  0.578947  0.819130  0.822280\n",
+              "2  0.666667 -0.111111 -0.578947  0.946087  0.998085"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 76
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "fCDgWnPd8sDJ"
+      },
+      "source": [
+        "# separa os dados em treino e teste\n",
+        "train=DAT.sample(frac=0.8,random_state=None) # poderia ser frac=0.5? sim ou nao?\n",
+        "test=DAT.drop(train.index)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 142
+        },
+        "id": "qFQ7vjLR84u9",
+        "outputId": "58cf0565-6215-4249-8cfe-83a00768219e"
+      },
+      "source": [
+        "train.head(3)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Abs</th>\n",
+              "      <th>IC</th>\n",
+              "      <th>AA</th>\n",
+              "      <th>AD</th>\n",
+              "      <th>PRA</th>\n",
+              "      <th>MDL</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>15</th>\n",
+              "      <td>0.666667</td>\n",
+              "      <td>-0.111111</td>\n",
+              "      <td>-0.684211</td>\n",
+              "      <td>-0.511958</td>\n",
+              "      <td>0.946087</td>\n",
+              "      <td>0.996432</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>20</th>\n",
+              "      <td>1.000000</td>\n",
+              "      <td>-0.111111</td>\n",
+              "      <td>-0.578947</td>\n",
+              "      <td>-0.611260</td>\n",
+              "      <td>0.995652</td>\n",
+              "      <td>0.998782</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>-1.000000</td>\n",
+              "      <td>1.000000</td>\n",
+              "      <td>-0.684211</td>\n",
+              "      <td>-0.222356</td>\n",
+              "      <td>-0.913043</td>\n",
+              "      <td>-0.951001</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "         Abs        IC        AA        AD       PRA       MDL\n",
+              "15  0.666667 -0.111111 -0.684211 -0.511958  0.946087  0.996432\n",
+              "20  1.000000 -0.111111 -0.578947 -0.611260  0.995652  0.998782\n",
+              "4  -1.000000  1.000000 -0.684211 -0.222356 -0.913043 -0.951001"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 24
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 142
+        },
+        "id": "mLM5wbFx9DYq",
+        "outputId": "fe02e9de-ce52-4cfd-d48d-f5dceb79c543"
+      },
+      "source": [
+        "test.head(3)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>Abs</th>\n",
+              "      <th>IC</th>\n",
+              "      <th>AA</th>\n",
+              "      <th>AD</th>\n",
+              "      <th>PRA</th>\n",
+              "      <th>MDL</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>1</th>\n",
+              "      <td>0.000000</td>\n",
+              "      <td>-1.000000</td>\n",
+              "      <td>0.578947</td>\n",
+              "      <td>-0.995172</td>\n",
+              "      <td>0.819130</td>\n",
+              "      <td>0.822280</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>2</th>\n",
+              "      <td>0.666667</td>\n",
+              "      <td>-0.111111</td>\n",
+              "      <td>-0.578947</td>\n",
+              "      <td>-0.613613</td>\n",
+              "      <td>0.946087</td>\n",
+              "      <td>0.998085</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>3</th>\n",
+              "      <td>1.000000</td>\n",
+              "      <td>-0.111111</td>\n",
+              "      <td>-0.789474</td>\n",
+              "      <td>-0.344674</td>\n",
+              "      <td>0.918261</td>\n",
+              "      <td>0.994865</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "        Abs        IC        AA        AD       PRA       MDL\n",
+              "1  0.000000 -1.000000  0.578947 -0.995172  0.819130  0.822280\n",
+              "2  0.666667 -0.111111 -0.578947 -0.613613  0.946087  0.998085\n",
+              "3  1.000000 -0.111111 -0.789474 -0.344674  0.918261  0.994865"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 25
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "kGIKsgEP9PQ6"
+      },
+      "source": [
+        "# obtem as variaveis independentes (treino e teste)\n",
+        "x_train=train.iloc[:,[0,1]]\n",
+        "x_test=test.iloc[:,[0,1]]\n",
+        "X_OLD=DAT_OLD.iloc[:,[0,1]]"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 374
+        },
+        "id": "lZQqCzwC9g_j",
+        "outputId": "103cedf7-87f7-46d4-eb08-c95a3da452f8"
+      },
+      "source": [
+        "# obtem a dependente potência (treino e teste)\n",
+        "Index=[5]\n",
+        "y_train=train.iloc[:,Index]\n",
+        "y_test=test.iloc[:,Index]\n",
+        "Y_OLD=DAT_OLD.iloc[:,Index]"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "error",
+          "ename": "IndexError",
+          "evalue": "ignored",
+          "traceback": [
+            "\u001b[0;31m---------------------------------------------------------------------------\u001b[0m",
+            "\u001b[0;31mIndexError\u001b[0m                                Traceback (most recent call last)",
+            "\u001b[0;32m<ipython-input-62-cb2662ae687e>\u001b[0m in \u001b[0;36m<module>\u001b[0;34m()\u001b[0m\n\u001b[1;32m      1\u001b[0m \u001b[0;31m# obtem a dependente potência (treino e teste)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      2\u001b[0m \u001b[0mIndex\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;36m5\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m----> 3\u001b[0;31m \u001b[0my_train\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mtrain\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0miloc\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mIndex\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m      4\u001b[0m \u001b[0my_test\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mtest\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0miloc\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mIndex\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m      5\u001b[0m \u001b[0mY_OLD\u001b[0m\u001b[0;34m=\u001b[0m\u001b[0mDAT_OLD\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0miloc\u001b[0m\u001b[0;34m[\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m,\u001b[0m\u001b[0mIndex\u001b[0m\u001b[0;34m]\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexing.py\u001b[0m in \u001b[0;36m__getitem__\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m    871\u001b[0m                     \u001b[0;31m# AttributeError for IntervalTree get_value\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    872\u001b[0m                     \u001b[0;32mpass\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 873\u001b[0;31m             \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_getitem_tuple\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mkey\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    874\u001b[0m         \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    875\u001b[0m             \u001b[0;31m# we by definition only have the 0th axis\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexing.py\u001b[0m in \u001b[0;36m_getitem_tuple\u001b[0;34m(self, tup)\u001b[0m\n\u001b[1;32m   1441\u001b[0m     \u001b[0;32mdef\u001b[0m \u001b[0m_getitem_tuple\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mself\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mtup\u001b[0m\u001b[0;34m:\u001b[0m \u001b[0mTuple\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1442\u001b[0m \u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1443\u001b[0;31m         \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_has_valid_tuple\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtup\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1444\u001b[0m         \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1445\u001b[0m             \u001b[0;32mreturn\u001b[0m \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_getitem_lowerdim\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mtup\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexing.py\u001b[0m in \u001b[0;36m_has_valid_tuple\u001b[0;34m(self, key)\u001b[0m\n\u001b[1;32m    700\u001b[0m                 \u001b[0;32mraise\u001b[0m \u001b[0mIndexingError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"Too many indexers\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    701\u001b[0m             \u001b[0;32mtry\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m--> 702\u001b[0;31m                 \u001b[0mself\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0m_validate_key\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0mk\u001b[0m\u001b[0;34m,\u001b[0m \u001b[0mi\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m    703\u001b[0m             \u001b[0;32mexcept\u001b[0m \u001b[0mValueError\u001b[0m \u001b[0;32mas\u001b[0m \u001b[0merr\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m    704\u001b[0m                 raise ValueError(\n",
+            "\u001b[0;32m/usr/local/lib/python3.7/dist-packages/pandas/core/indexing.py\u001b[0m in \u001b[0;36m_validate_key\u001b[0;34m(self, key, axis)\u001b[0m\n\u001b[1;32m   1365\u001b[0m             \u001b[0;31m# check that the key does not exceed the maximum size of the index\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1366\u001b[0m             \u001b[0;32mif\u001b[0m \u001b[0mlen\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0marr\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;32mand\u001b[0m \u001b[0;34m(\u001b[0m\u001b[0marr\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmax\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m>=\u001b[0m \u001b[0mlen_axis\u001b[0m \u001b[0;32mor\u001b[0m \u001b[0marr\u001b[0m\u001b[0;34m.\u001b[0m\u001b[0mmin\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m)\u001b[0m \u001b[0;34m<\u001b[0m \u001b[0;34m-\u001b[0m\u001b[0mlen_axis\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0;32m-> 1367\u001b[0;31m                 \u001b[0;32mraise\u001b[0m \u001b[0mIndexError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34m\"positional indexers are out-of-bounds\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[0m\u001b[1;32m   1368\u001b[0m         \u001b[0;32melse\u001b[0m\u001b[0;34m:\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n\u001b[1;32m   1369\u001b[0m             \u001b[0;32mraise\u001b[0m \u001b[0mValueError\u001b[0m\u001b[0;34m(\u001b[0m\u001b[0;34mf\"Can only index by location with a [{self._valid_types}]\"\u001b[0m\u001b[0;34m)\u001b[0m\u001b[0;34m\u001b[0m\u001b[0;34m\u001b[0m\u001b[0m\n",
+            "\u001b[0;31mIndexError\u001b[0m: positional indexers are out-of-bounds"
+          ]
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "UZHSMH_V9leZ"
+      },
+      "source": [
+        "# define a rede neural \n",
+        "model = MLPRegressor(solver='adam',activation='tanh',alpha=1e-5,max_iter=100,\n",
+        "                     hidden_layer_sizes=(5, 5),random_state=1)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "6DmQeD2u9pQa",
+        "outputId": "8825580e-ea1a-49f5-aa45-086b1737273c"
+      },
+      "source": [
+        "# treina a rede neural\n",
+        "model.fit(x_train, y_train)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "/usr/local/lib/python3.7/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:1342: DataConversionWarning: A column-vector y was passed when a 1d array was expected. Please change the shape of y to (n_samples, ), for example using ravel().\n",
+            "  y = column_or_1d(y, warn=True)\n",
+            "/usr/local/lib/python3.7/dist-packages/sklearn/neural_network/_multilayer_perceptron.py:571: ConvergenceWarning: Stochastic Optimizer: Maximum iterations (100) reached and the optimization hasn't converged yet.\n",
+            "  % self.max_iter, ConvergenceWarning)\n"
+          ],
+          "name": "stderr"
+        },
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/plain": [
+              "MLPRegressor(activation='tanh', alpha=1e-05, batch_size='auto', beta_1=0.9,\n",
+              "             beta_2=0.999, early_stopping=False, epsilon=1e-08,\n",
+              "             hidden_layer_sizes=(5, 5), learning_rate='constant',\n",
+              "             learning_rate_init=0.001, max_fun=15000, max_iter=100,\n",
+              "             momentum=0.9, n_iter_no_change=10, nesterovs_momentum=True,\n",
+              "             power_t=0.5, random_state=1, shuffle=True, solver='adam',\n",
+              "             tol=0.0001, validation_fraction=0.1, verbose=False,\n",
+              "             warm_start=False)"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 36
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "92d7Y0-x-GSn"
+      },
+      "source": [
+        "# usa a rede neural treina em calculos para treino e teste\n",
+        "y_calc_train=model.predict(x_train)\n",
+        "y_calc_test=model.predict(x_test)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "lbK8PrBl-K8K"
+      },
+      "source": [
+        "# transforma a saida da rede em dataframe \n",
+        "y_calc_train=pd.DataFrame(y_calc_train)\n",
+        "y_calc_test=pd.DataFrame(y_calc_test)\n",
+        "col_names=list(y_train)\n",
+        "y_calc_train.columns = col_names\n",
+        "y_calc_test.columns = col_names"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "HnZL7GUfALwN"
+      },
+      "source": [
+        "# transforma dos dados calculados na forma original (nao normatizado)\n",
+        "y_calc_train=Original(y_calc_train,Y_OLD)\n",
+        "y_calc_test=Original(y_calc_test,Y_OLD)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "rdpvIAqLASxu"
+      },
+      "source": [
+        "# recupera os dados originais \n",
+        "test=[]\n",
+        "train=[]\n",
+        "train=Original(y_train,Y_OLD)\n",
+        "test=Original(y_test,Y_OLD)"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 607
+        },
+        "id": "NO-sIx5tAcba",
+        "outputId": "75d9834f-fb76-4103-fcc6-54bebd3dbe71"
+      },
+      "source": [
+        "train"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "execute_result",
+          "data": {
+            "text/html": [
+              "<div>\n",
+              "<style scoped>\n",
+              "    .dataframe tbody tr th:only-of-type {\n",
+              "        vertical-align: middle;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe tbody tr th {\n",
+              "        vertical-align: top;\n",
+              "    }\n",
+              "\n",
+              "    .dataframe thead th {\n",
+              "        text-align: right;\n",
+              "    }\n",
+              "</style>\n",
+              "<table border=\"1\" class=\"dataframe\">\n",
+              "  <thead>\n",
+              "    <tr style=\"text-align: right;\">\n",
+              "      <th></th>\n",
+              "      <th>MDL</th>\n",
+              "    </tr>\n",
+              "  </thead>\n",
+              "  <tbody>\n",
+              "    <tr>\n",
+              "      <th>15</th>\n",
+              "      <td>99.910</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>20</th>\n",
+              "      <td>99.937</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>4</th>\n",
+              "      <td>77.534</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>14</th>\n",
+              "      <td>99.865</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>11</th>\n",
+              "      <td>98.133</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>6</th>\n",
+              "      <td>88.679</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>13</th>\n",
+              "      <td>99.677</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>8</th>\n",
+              "      <td>76.971</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>21</th>\n",
+              "      <td>99.945</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>16</th>\n",
+              "      <td>99.939</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>9</th>\n",
+              "      <td>88.442</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>0</th>\n",
+              "      <td>90.389</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>18</th>\n",
+              "      <td>99.768</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>19</th>\n",
+              "      <td>99.924</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>17</th>\n",
+              "      <td>99.951</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>5</th>\n",
+              "      <td>87.845</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>7</th>\n",
+              "      <td>93.050</td>\n",
+              "    </tr>\n",
+              "    <tr>\n",
+              "      <th>10</th>\n",
+              "      <td>95.991</td>\n",
+              "    </tr>\n",
+              "  </tbody>\n",
+              "</table>\n",
+              "</div>"
+            ],
+            "text/plain": [
+              "       MDL\n",
+              "15  99.910\n",
+              "20  99.937\n",
+              "4   77.534\n",
+              "14  99.865\n",
+              "11  98.133\n",
+              "6   88.679\n",
+              "13  99.677\n",
+              "8   76.971\n",
+              "21  99.945\n",
+              "16  99.939\n",
+              "9   88.442\n",
+              "0   90.389\n",
+              "18  99.768\n",
+              "19  99.924\n",
+              "17  99.951\n",
+              "5   87.845\n",
+              "7   93.050\n",
+              "10  95.991"
+            ]
+          },
+          "metadata": {
+            "tags": []
+          },
+          "execution_count": 41
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "WF_bb1L4Awq4"
+      },
+      "source": [
+        "# escolhe uma das resposta para fazer o grafico (resistencia-treino)\n",
+        "resist_obs_train=[]\n",
+        "resist_calc_train=[]\n",
+        "resist_calc_train=y_calc_train['MDL'].copy()\n",
+        "resist_obs_train=train['MDL'].copy()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "id": "dr4HIAxLA8-t"
+      },
+      "source": [
+        "# escolhe uma das resposta para fazer o grafico (resistencia-teste)\n",
+        "resist_obs_test=[]\n",
+        "resist_calc_test=[]\n",
+        "resist_calc_test=y_calc_test['MDL'].copy()\n",
+        "resist_obs_test=test['MDL'].copy()"
+      ],
+      "execution_count": null,
+      "outputs": []
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/",
+          "height": 279
+        },
+        "id": "p1Bj0LWVBF9u",
+        "outputId": "b4a9cf5c-fba9-4947-d566-6506cdab4412"
+      },
+      "source": [
+        "# expressa os dois dados em figura\n",
+        "fig = plt.figure()\n",
+        "ax1 = fig.add_subplot(111)\n",
+        "\n",
+        "ax1.scatter(resist_obs_test,resist_calc_test, s=10, c='b', marker=\"o\", label='teste')\n",
+        "ax1.scatter(resist_obs_train,resist_calc_train, s=10, c='r', marker=\"o\", label='treino')\n",
+        "plt.legend(loc='upper left')\n",
+        "plt.ylabel('MDL Calculado')\n",
+        "plt.xlabel('MDL Observado')\n",
+        "plt.show()"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "display_data",
+          "data": {
+            "image/png": "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\n",
+            "text/plain": [
+              "<Figure size 432x288 with 1 Axes>"
+            ]
+          },
+          "metadata": {
+            "tags": [],
+            "needs_background": "light"
+          }
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "abdO_0e6D_HU",
+        "outputId": "883e7197-b551-4f38-d678-4aa7af6e0131"
+      },
+      "source": [
+        "mse=mean_squared_error(resist_obs_test,resist_calc_test)\n",
+        "print(\"MSE teste=\",mse)\n",
+        "R2=r2_score(resist_obs_test,resist_calc_test)\n",
+        "print(\"R^2 teste=\",R2)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "MSE teste= 27.437349044662838\n",
+            "R^2 teste= -26.67964279789402\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    },
+    {
+      "cell_type": "code",
+      "metadata": {
+        "colab": {
+          "base_uri": "https://localhost:8080/"
+        },
+        "id": "N8mdNlDzEbCR",
+        "outputId": "612e25c4-c528-4161-cf91-19d4aef1a79f"
+      },
+      "source": [
+        "mse=mean_squared_error(resist_obs_train,resist_calc_train)\n",
+        "print(\"MSE treino=\",mse)\n",
+        "R2=r2_score(resist_obs_train,resist_calc_train)\n",
+        "print(\"R^2 treino=\",R2)"
+      ],
+      "execution_count": null,
+      "outputs": [
+        {
+          "output_type": "stream",
+          "text": [
+            "MSE treino= 39.46448658797218\n",
+            "R^2 treino= 0.2921313513538967\n"
+          ],
+          "name": "stdout"
+        }
+      ]
+    }
+  ]
+}
